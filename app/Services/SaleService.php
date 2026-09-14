@@ -19,7 +19,6 @@ class SaleService
                 throw ValidationException::withMessages(['payment' => 'Nilai pembayaran, diskon, dan pajak tidak valid.']);
             }
 
-            /** @var CashSession|null $cashSession */
             $cashSession = CashSession::query()->where('store_id', $store->id)->where('status', 'open')->lockForUpdate()->first();
             if (! $cashSession) {
                 throw ValidationException::withMessages(['cash_session' => 'Buka sesi kasir terlebih dahulu sebelum melakukan checkout.']);
@@ -46,13 +45,13 @@ class SaleService
                     throw ValidationException::withMessages(["items.{$index}.quantity" => 'Jumlah produk harus lebih dari 0.']);
                 }
 
-                /** @var Product $product */
                 $product = Product::query()->whereKey($input['product_id'] ?? 0)->lockForUpdate()->first();
                 if (! $product || ! $product->is_active) {
                     throw ValidationException::withMessages(["items.{$index}.product_id" => 'Produk tidak tersedia.']);
                 }
 
                 $unitPrice = (float) $product->selling_price;
+                $unitCost = (float) $product->cost_price;
                 $discount = max(0, (float) ($input['discount'] ?? 0));
                 $tax = max(0, (float) ($input['tax'] ?? 0));
                 $base = $unitPrice * $quantity;
@@ -69,6 +68,7 @@ class SaleService
                     'product_id' => $product->id,
                     'quantity' => $quantity,
                     'unit_price' => $unitPrice,
+                    'unit_cost' => $unitCost,
                     'discount' => $discount,
                     'tax' => $tax,
                     'line_total' => $lineTotal,
@@ -112,7 +112,15 @@ class SaleService
                 'paid_at' => now(),
             ]);
 
-            return $sale->load(['items.product', 'payments', 'store', 'cashier', 'cashSession']);
+            $sale = $sale->load(['items.product', 'payments', 'store', 'cashier', 'cashSession']);
+            app(AuditLogService::class)->record($cashier, 'sale.completed', $sale, null, [
+                'invoice_number' => $sale->invoice_number,
+                'grand_total' => $sale->grand_total,
+                'payment_method' => $paymentMethod,
+                'cash_session_id' => $cashSession->id,
+            ], null, $store->id);
+
+            return $sale;
         });
     }
 
