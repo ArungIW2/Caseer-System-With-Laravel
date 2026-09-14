@@ -2,6 +2,27 @@
 
 A production-oriented retail Point of Sale (POS) and store management system built with Laravel 13.
 
+## Phase Status
+
+### Phase 1 — Domain & Database Architecture ✅
+
+Implemented:
+
+- Multi-store foundation with `stores`
+- Store-scoped users
+- Product catalog: categories, brands, units, products
+- Store-specific inventory balances
+- Append-only inventory movement ledger
+- Suppliers and purchasing documents
+- Sales, sale items, and payments
+- Cash register sessions
+- Sale returns and return items
+- Audit log foundation
+- Eloquent domain models and relationships
+- Database architecture and ERD documentation in `docs/architecture/database.md`
+
+The inventory ledger is intentionally separated from the current inventory balance. Checkout and other stock-changing workflows should update both inside one database transaction with row locking.
+
 ## Planned Modules
 
 - Authentication and role-based access control
@@ -40,4 +61,4 @@ npm install
 npm run dev
 ```
 
-The application is being developed incrementally, starting with the domain model and database foundation before the POS workflow.
+The application is being developed incrementally, with the domain model and database foundation established before implementing the POS workflow.
