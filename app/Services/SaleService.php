@@ -2,24 +2,33 @@
 
 namespace App\Services;
 
+use App\Models\CashSession;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Models\Store;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class SaleService
 {
-    public function checkout(User $cashier, \App\Models\Store $store, array $items, string $paymentMethod, float $paidAmount, ?string $paymentReference = null, float $discountTotal = 0, float $taxTotal = 0, ?string $notes = null): Sale
+    public function checkout(User $cashier, Store $store, array $items, string $paymentMethod, float $paidAmount, ?string $paymentReference = null, float $discountTotal = 0, float $taxTotal = 0, ?string $notes = null): Sale
     {
         return DB::transaction(function () use ($cashier, $store, $items, $paymentMethod, $paidAmount, $paymentReference, $discountTotal, $taxTotal, $notes): Sale {
             if ($paidAmount < 0 || $discountTotal < 0 || $taxTotal < 0) {
                 throw ValidationException::withMessages(['payment' => 'Nilai pembayaran, diskon, dan pajak tidak valid.']);
             }
 
+            /** @var CashSession|null $cashSession */
+            $cashSession = CashSession::query()->where('store_id', $store->id)->where('status', 'open')->lockForUpdate()->first();
+            if (! $cashSession) {
+                throw ValidationException::withMessages(['cash_session' => 'Buka sesi kasir terlebih dahulu sebelum melakukan checkout.']);
+            }
+
             $sale = Sale::create([
                 'store_id' => $store->id,
                 'cashier_id' => $cashier->id,
+                'cash_session_id' => $cashSession->id,
                 'invoice_number' => $this->invoiceNumber(),
                 'sold_at' => now(),
                 'status' => 'completed',
@@ -103,7 +112,7 @@ class SaleService
                 'paid_at' => now(),
             ]);
 
-            return $sale->load(['items.product', 'payments', 'store', 'cashier']);
+            return $sale->load(['items.product', 'payments', 'store', 'cashier', 'cashSession']);
         });
     }
 
