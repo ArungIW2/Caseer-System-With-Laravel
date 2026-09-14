@@ -52,21 +52,40 @@ Implemented:
 - Dashboard navigation to master-data modules
 - Development seed data for a store, categories, brands, units, supplier, and demo product
 
-The inventory ledger is intentionally separated from the current inventory balance. Checkout and other stock-changing workflows should update both inside one database transaction with row locking.
+### Phase 4 — Inventory Management ✅
+
+Implemented:
+
+- Store-specific inventory balance UI
+- Stock In with optional unit cost
+- Stock Out with available-stock validation
+- Manual stock adjustment to an exact target balance
+- Stock opname / physical-count reconciliation
+- Transfer stock between stores
+- Append-only inventory movement ledger UI
+- Movement filtering and pagination
+- Minimum-stock monitoring and low-stock filter
+- Database transactions around every stock-changing operation
+- `lockForUpdate()` row locking to protect concurrent stock changes
+- Deterministic lock ordering for inter-store transfers to reduce deadlock risk
+- Reserved quantity respected when issuing or transferring stock
+- Negative stock protection
+- Store-aware access policies for inventory screens
+
+Inventory changes update the current balance and append a movement record inside the same transaction. Future purchasing, POS, returns, and transfer workflows should reuse `InventoryService` rather than modifying balances directly.
 
 ## Planned Modules
 
 - User management UI and role administration
-- Inventory and stock movement ledger UI
-- Purchasing workflow
-- Retail POS and checkout
+- Purchasing workflow integrated with inventory receiving
+- Retail POS and checkout integrated with inventory locking
 - Sales, returns, and refunds
 - Payments and receipts
 - Dashboard and reporting
 - Audit logging integration
-- Multi-store access policies
-- Automated tests
+- Automated feature/unit tests
 - Docker and CI/CD
+- Production hardening
 
 ## Stack
 
@@ -101,4 +120,4 @@ The development seeder creates:
 
 Change or remove this credential before any non-local deployment.
 
-The application is being developed incrementally, with the domain model and database foundation established before implementing transactional POS and inventory workflows.
+The application is being developed incrementally, with transactional inventory controls established before implementing the POS checkout workflow.
