@@ -20,10 +20,7 @@ class ReportController extends Controller
         $to = $request->input('to', now()->toDateString());
 
         $sales = Sale::query()->whereIn('store_id', $storeIds)->where('status', 'completed')->whereBetween('sold_at', [$from.' 00:00:00', $to.' 23:59:59']);
-        if ($request->filled('store_id')) {
-            abort_unless($stores->contains('id', (int) $request->store_id), 403);
-            $sales->where('store_id', (int) $request->store_id);
-        }
+        if ($request->filled('store_id')) { abort_unless($stores->contains('id', (int) $request->store_id), 403); $sales->where('store_id', (int) $request->store_id); }
 
         $purchaseQuery = Purchase::query()->whereIn('store_id', $storeIds)->where('status', 'received')->whereBetween('purchased_at', [$from.' 00:00:00', $to.' 23:59:59']);
         if ($request->filled('store_id')) $purchaseQuery->where('store_id', (int) $request->store_id);
@@ -37,27 +34,22 @@ class ReportController extends Controller
             if ($request->filled('store_id')) $q->where('store_id', (int) $request->store_id);
         })->selectRaw('method, SUM(amount) as total')->groupBy('method')->orderByDesc('total')->get();
 
-        $topProducts = \App\Models\SaleItem::query()
-            ->with('product')
-            ->whereHas('sale', function ($q) use ($storeIds, $from, $to, $request) {
-                $q->whereIn('store_id', $storeIds)->where('status', 'completed')->whereBetween('sold_at', [$from.' 00:00:00', $to.' 23:59:59']);
-                if ($request->filled('store_id')) $q->where('store_id', (int) $request->store_id);
-            })
-            ->selectRaw('product_id, SUM(quantity) as quantity, SUM(line_total) as total')
-            ->groupBy('product_id')->orderByDesc('quantity')->limit(10)->get();
+        $topProducts = \App\Models\SaleItem::query()->with('product')->whereHas('sale', function ($q) use ($storeIds, $from, $to, $request) {
+            $q->whereIn('store_id', $storeIds)->where('status', 'completed')->whereBetween('sold_at', [$from.' 00:00:00', $to.' 23:59:59']);
+            if ($request->filled('store_id')) $q->where('store_id', (int) $request->store_id);
+        })->selectRaw('product_id, SUM(quantity) as quantity, SUM(line_total) as total, SUM((quantity * unit_cost)) as cost_total, SUM(line_total - (quantity * unit_cost)) as gross_profit')->groupBy('product_id')->orderByDesc('quantity')->limit(10)->get();
 
-        $lowStockQuery = Inventory::query()->with('product')->whereIn('store_id', $storeIds)->whereColumn('quantity', '<=', 'products.minimum_stock')->join('products', 'products.id', '=', 'inventories.product_id')->select('inventories.*');
+        $grossProfit = (clone $sales)->with('items')->get()->sum(fn ($sale) => $sale->items->sum(fn ($item) => (float) $item->line_total - ((float) $item->quantity * (float) $item->unit_cost)));
+        $lowStockQuery = Inventory::query()->with('product')->whereIn('store_id', $storeIds)->join('products', 'products.id', '=', 'inventories.product_id')->whereColumn('inventories.quantity', '<=', 'products.minimum_stock')->select('inventories.*');
         if ($request->filled('store_id')) $lowStockQuery->where('store_id', (int) $request->store_id);
         $lowStockCount = $lowStockQuery->count();
 
-        return view('reports.index', compact('stores', 'from', 'to', 'salesTotal', 'transactionCount', 'purchaseTotal', 'cashTotal', 'paymentBreakdown', 'topProducts', 'lowStockCount'));
+        return view('reports.index', compact('stores', 'from', 'to', 'salesTotal', 'transactionCount', 'purchaseTotal', 'cashTotal', 'paymentBreakdown', 'topProducts', 'lowStockCount', 'grossProfit'));
     }
 
     private function storesFor(Request $request)
     {
         $user = $request->user();
-        return in_array($user->role, ['super_admin', 'owner'], true)
-            ? Store::query()->where('is_active', true)->orderBy('name')->get()
-            : Store::query()->whereKey($user->store_id)->where('is_active', true)->get();
+        return in_array($user->role, ['super_admin', 'owner'], true) ? Store::query()->where('is_active', true)->orderBy('name')->get() : Store::query()->whereKey($user->store_id)->where('is_active', true)->get();
     }
 }
