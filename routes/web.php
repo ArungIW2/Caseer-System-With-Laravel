@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CashSessionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SaleReturnController;
 use Illuminate\Support\Facades\Route;
@@ -36,6 +38,19 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/sales/{sale}/create', [SaleReturnController::class, 'create'])->name('sale-returns.create');
         Route::post('/sales/{sale}', [SaleReturnController::class, 'store'])->name('sale-returns.store');
         Route::get('/{saleReturn}', [SaleReturnController::class, 'show'])->name('sale-returns.show');
+    });
+
+    Route::middleware('role:super_admin,owner,manager,inventory_staff,cashier')->prefix('cash-sessions')->group(function (): void {
+        Route::get('/', [CashSessionController::class, 'index'])->name('cash-sessions.index');
+        Route::get('/create', [CashSessionController::class, 'create'])->name('cash-sessions.create');
+        Route::post('/', [CashSessionController::class, 'store'])->name('cash-sessions.store');
+        Route::get('/{cashSession}', [CashSessionController::class, 'show'])->name('cash-sessions.show');
+        Route::get('/{cashSession}/close', [CashSessionController::class, 'closeForm'])->name('cash-sessions.close');
+        Route::post('/{cashSession}/close', [CashSessionController::class, 'close'])->name('cash-sessions.close.store');
+    });
+
+    Route::middleware('role:super_admin,owner,manager')->prefix('reports')->group(function (): void {
+        Route::get('/', [ReportController::class, 'index'])->name('reports.index');
     });
 
     Route::middleware('role:super_admin,owner,manager,inventory_staff')->prefix('inventory')->group(function (): void {
