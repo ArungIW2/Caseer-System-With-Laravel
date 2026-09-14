@@ -127,6 +127,7 @@ Implemented:
 - Store-aware authorization
 - Return history/detail/printable document
 - Return reason capture
+- Zero-quantity return rows are filtered before validation
 
 ### Phase 8 — Cash Register & Reporting ✅
 
@@ -160,24 +161,37 @@ Implemented:
 - Audit log filtering by event and store
 - Role-protected administration routes
 - Dashboard navigation for user management and audit logs
+- Store-scoped roles require store assignment
+- Self role escalation is blocked
 
-User administration flow:
+### Phase 10 — Testing, Historical Accounting, CI/CD & Hardening ✅
 
-`Admin → Create/Edit User → Assign Role → Assign Store → Activate/Deactivate → Audit Record`
+Implemented:
 
-Audit flow:
-
-`Administrative Action → AuditLogService → audit_logs → Filterable Audit History`
+- PHPUnit configuration for the Laravel test suite
+- Feature tests for authentication
+- Feature tests for RBAC
+- Feature tests for user-management validation and audit creation
+- Historical `unit_cost` snapshot on every sale item
+- Gross-profit reporting based on the historical sale cost snapshot
+- Sale completion audit events
+- GitHub Actions CI with PostgreSQL 16
+- Automated Composer install, frontend build, migrations, and test execution in CI
+- Docker runtime image for PHP 8.3
+- Docker frontend asset build stage
+- Docker Compose runtime with PostgreSQL 16
+- Fix for zero-quantity sale-return submissions
+- Production-oriented role/store validation hardening
 
 ## Planned Modules
 
 - Draft/hold POS transactions
 - Split payments and advanced refund settlement
-- Automatic audit logging across purchasing, inventory, POS, returns, and cash sessions
-- Historical cost/profit accounting with cost snapshots
-- Automated feature/unit tests
-- Docker and CI/CD
-- Production hardening
+- Full audit coverage for purchasing, inventory, returns, and cash sessions
+- Idempotent checkout protection
+- Advanced cash in/out adjustments
+- Nginx + PHP-FPM production deployment profile
+- Expanded integration/concurrency test coverage
 
 ## Stack
 
@@ -187,7 +201,7 @@ Audit flow:
 - Redis
 - Blade + Livewire
 - Tailwind CSS
-- Pest / PHPUnit
+- PHPUnit
 - Docker
 - GitHub Actions
 
@@ -202,6 +216,18 @@ npm install
 npm run dev
 ```
 
+### Docker
+
+```bash
+docker compose up --build
+```
+
+Run migrations inside the container after the database is healthy:
+
+```bash
+docker compose exec app php artisan migrate --seed
+```
+
 ### Local development account
 
 The development seeder creates:
@@ -212,4 +238,4 @@ The development seeder creates:
 
 Change or remove this credential before any non-local deployment.
 
-The application is being developed incrementally, with transactional inventory controls established before implementing progressively richer POS, returns, reporting, and administration workflows.
+The application is being developed incrementally, with transactional inventory controls established before implementing progressively richer POS, returns, reporting, administration, automated testing, and deployment workflows.
