@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\SaleController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -19,6 +20,17 @@ Route::middleware('guest')->group(function (): void {
 Route::middleware('auth')->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
+
+    Route::middleware('role:super_admin,owner,manager,inventory_staff,cashier')->prefix('pos')->group(function (): void {
+        Route::get('/', [SaleController::class, 'pos'])->name('pos.index');
+        Route::get('/products', [SaleController::class, 'products'])->name('sales.products');
+        Route::post('/checkout', [SaleController::class, 'checkout'])->name('sales.checkout');
+    });
+
+    Route::middleware('role:super_admin,owner,manager,inventory_staff,cashier')->prefix('sales')->group(function (): void {
+        Route::get('/', [SaleController::class, 'index'])->name('sales.index');
+        Route::get('/{sale}', [SaleController::class, 'show'])->name('sales.show');
+    });
 
     Route::middleware('role:super_admin,owner,manager,inventory_staff')->prefix('inventory')->group(function (): void {
         Route::get('/', [InventoryController::class, 'index'])->name('inventory.index');
@@ -54,14 +66,12 @@ Route::middleware('auth')->group(function (): void {
     });
 
     Route::middleware('role:super_admin,owner')->prefix('master-data')->group(function (): void {
-        foreach (['stores'] as $resource) {
-            Route::get("/{$resource}", [MasterDataController::class, 'index'])->defaults('resource', $resource)->name("master-data.{$resource}.index");
-            Route::get("/{$resource}/create", [MasterDataController::class, 'create'])->defaults('resource', $resource)->name("master-data.{$resource}.create");
-            Route::post("/{$resource}", [MasterDataController::class, 'store'])->defaults('resource', $resource)->name("master-data.{$resource}.store");
-            Route::get("/{$resource}/{id}/edit", [MasterDataController::class, 'edit'])->defaults('resource', $resource)->name("master-data.{$resource}.edit");
-            Route::put("/{$resource}/{id}", [MasterDataController::class, 'update'])->defaults('resource', $resource)->name("master-data.{$resource}.update");
-            Route::delete("/{$resource}/{id}", [MasterDataController::class, 'destroy'])->defaults('resource', $resource)->name("master-data.{$resource}.destroy");
-        }
+        Route::get('/stores', [MasterDataController::class, 'index'])->defaults('resource', 'stores')->name('master-data.stores.index');
+        Route::get('/stores/create', [MasterDataController::class, 'create'])->defaults('resource', 'stores')->name('master-data.stores.create');
+        Route::post('/stores', [MasterDataController::class, 'store'])->defaults('resource', 'stores')->name('master-data.stores.store');
+        Route::get('/stores/{id}/edit', [MasterDataController::class, 'edit'])->defaults('resource', 'stores')->name('master-data.stores.edit');
+        Route::put('/stores/{id}', [MasterDataController::class, 'update'])->defaults('resource', 'stores')->name('master-data.stores.update');
+        Route::delete('/stores/{id}', [MasterDataController::class, 'destroy'])->defaults('resource', 'stores')->name('master-data.stores.destroy');
     });
 });
 
