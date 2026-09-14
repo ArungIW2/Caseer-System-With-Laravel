@@ -19,7 +19,6 @@ class UserManagementController extends Controller
         })->when($request->filled('role'), fn ($q) => $q->where('role', $request->string('role')))
           ->when($request->has('active') && $request->active !== '', fn ($q) => $q->where('is_active', (bool) $request->active))
           ->orderBy('name')->paginate(15)->withQueryString();
-
         return view('users.index', compact('users'));
     }
 
@@ -44,6 +43,7 @@ class UserManagementController extends Controller
 
     public function update(Request $request, User $user, AuditLogService $audit)
     {
+        abort_if($request->user()->id === $user->id && $request->input('role') !== $user->role, 422, 'Perubahan role akun sendiri tidak diizinkan.');
         $old = ['name' => $user->name, 'email' => $user->email, 'role' => $user->role, 'store_id' => $user->store_id, 'is_active' => $user->is_active];
         $data = $this->validated($request, $user);
         if (blank($data['password'] ?? null)) unset($data['password']); else $data['password'] = Hash::make($data['password']);
@@ -63,12 +63,13 @@ class UserManagementController extends Controller
 
     private function validated(Request $request, ?User $user = null): array
     {
+        $rolesRequiringStore = ['manager', 'cashier', 'inventory_staff'];
         return $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
             'password' => [$user ? 'nullable' : 'required', 'string', 'min:8'],
             'role' => ['required', Rule::in(['super_admin', 'owner', 'manager', 'cashier', 'inventory_staff'])],
-            'store_id' => ['nullable', 'exists:stores,id'],
+            'store_id' => [Rule::requiredIf(fn () => in_array($request->input('role'), $rolesRequiringStore, true)), 'nullable', 'exists:stores,id'],
             'is_active' => ['boolean'],
         ]);
     }
