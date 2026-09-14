@@ -34,15 +34,32 @@ Implemented:
 - Default Super Admin seeder for local development
 - Protected dashboard
 
+### Phase 3 — Master Data Management ✅
+
+Implemented:
+
+- Store management for `super_admin` and `owner`
+- Category CRUD with parent-category support
+- Brand CRUD
+- Unit CRUD
+- Product CRUD with SKU/barcode uniqueness and catalog relationships
+- Supplier CRUD
+- Validation rules for master data
+- Search and pagination
+- Soft delete for categories, brands, units, products, and suppliers
+- Dependency checks before destructive deletion
+- Role-based access for master-data modules
+- Dashboard navigation to master-data modules
+- Development seed data for a store, categories, brands, units, supplier, and demo product
+
 The inventory ledger is intentionally separated from the current inventory balance. Checkout and other stock-changing workflows should update both inside one database transaction with row locking.
 
 ## Planned Modules
 
 - User management UI and role administration
+- Inventory and stock movement ledger UI
+- Purchasing workflow
 - Retail POS and checkout
-- Product, category, brand, and unit management
-- Inventory and stock movement ledger
-- Suppliers and purchasing
 - Sales, returns, and refunds
 - Payments and receipts
 - Dashboard and reporting
@@ -84,4 +101,4 @@ The development seeder creates:
 
 Change or remove this credential before any non-local deployment.
 
-The application is being developed incrementally, with the domain model and database foundation established before implementing the POS workflow.
+The application is being developed incrementally, with the domain model and database foundation established before implementing transactional POS and inventory workflows.
