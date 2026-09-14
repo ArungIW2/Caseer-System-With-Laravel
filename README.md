@@ -74,10 +74,32 @@ Implemented:
 
 Inventory changes update the current balance and append a movement record inside the same transaction. Future purchasing, POS, returns, and transfer workflows should reuse `InventoryService` rather than modifying balances directly.
 
+### Phase 5 — Purchasing & Receiving ✅
+
+Implemented:
+
+- Store-aware purchasing workflow
+- Purchase draft creation
+- Supplier selection
+- Purchase line items with quantity, unit cost, discount, and tax
+- Automatic subtotal, discount, tax, and grand-total calculation
+- Unique purchase document number generation
+- Purchase list with store/status filtering and pagination
+- Purchase detail screen
+- Draft-only receiving workflow to prevent duplicate stock receipt
+- Receiving integrates with `InventoryService`, so stock changes create movement-ledger records atomically
+- Purchase receipt movement references the purchase document number
+- Product cost price updated to the latest received unit cost
+- Transactional row locking around purchase receiving
+- Role-based purchasing access for `super_admin`, `owner`, `manager`, and `inventory_staff`
+- Store scoping so non-global roles cannot access another store's purchases
+- Dashboard navigation for purchasing
+
+A purchase remains a `draft` until it is explicitly received. Once received, its inventory impact is posted and the purchase becomes `received`; the current implementation does not silently mutate or receive an already-posted purchase.
+
 ## Planned Modules
 
 - User management UI and role administration
-- Purchasing workflow integrated with inventory receiving
 - Retail POS and checkout integrated with inventory locking
 - Sales, returns, and refunds
 - Payments and receipts
