@@ -2,17 +2,15 @@
 
 namespace App\Services;
 
-use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Sale;
-use App\Models\Store;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class SaleService
 {
-    public function checkout(User $cashier, Store $store, array $items, string $paymentMethod, float $paidAmount, ?string $paymentReference = null, float $discountTotal = 0, float $taxTotal = 0, ?string $notes = null): Sale
+    public function checkout(User $cashier, \App\Models\Store $store, array $items, string $paymentMethod, float $paidAmount, ?string $paymentReference = null, float $discountTotal = 0, float $taxTotal = 0, ?string $notes = null): Sale
     {
         return DB::transaction(function () use ($cashier, $store, $items, $paymentMethod, $paidAmount, $paymentReference, $discountTotal, $taxTotal, $notes): Sale {
             if ($paidAmount < 0 || $discountTotal < 0 || $taxTotal < 0) {
@@ -85,8 +83,8 @@ class SaleService
             }
 
             $change = $paidAmount - $grandTotal;
-            if ($paymentMethod !== 'cash' && $change > 0) {
-                throw ValidationException::withMessages(['paid_amount' => 'Pembayaran non-tunai harus sama dengan atau melebihi total tanpa kembalian.']);
+            if ($paymentMethod !== 'cash' && abs($change) > 0.009) {
+                throw ValidationException::withMessages(['paid_amount' => 'Pembayaran non-tunai harus sama persis dengan total transaksi.']);
             }
 
             $sale->update([
