@@ -21,11 +21,24 @@ Implemented:
 - Eloquent domain models and relationships
 - Database architecture and ERD documentation in `docs/architecture/database.md`
 
+### Phase 2 — Authentication & Authorization ✅
+
+Implemented:
+
+- Session-based login and logout
+- Active-user validation
+- Database-backed sessions
+- User roles: `super_admin`, `owner`, `manager`, `cashier`, and `inventory_staff`
+- Role middleware and protected routes
+- Store-aware authenticated user foundation
+- Default Super Admin seeder for local development
+- Protected dashboard
+
 The inventory ledger is intentionally separated from the current inventory balance. Checkout and other stock-changing workflows should update both inside one database transaction with row locking.
 
 ## Planned Modules
 
-- Authentication and role-based access control
+- User management UI and role administration
 - Retail POS and checkout
 - Product, category, brand, and unit management
 - Inventory and stock movement ledger
@@ -33,8 +46,8 @@ The inventory ledger is intentionally separated from the current inventory balan
 - Sales, returns, and refunds
 - Payments and receipts
 - Dashboard and reporting
-- Audit logging
-- Multi-store readiness
+- Audit logging integration
+- Multi-store access policies
 - Automated tests
 - Docker and CI/CD
 
@@ -56,9 +69,19 @@ The inventory ledger is intentionally separated from the current inventory balan
 composer install
 cp .env.example .env
 php artisan key:generate
-php artisan migrate
+php artisan migrate --seed
 npm install
 npm run dev
 ```
+
+### Local development account
+
+The development seeder creates:
+
+- Email: `admin@caseer.test`
+- Password: `ChangeMe123!`
+- Role: `super_admin`
+
+Change or remove this credential before any non-local deployment.
 
 The application is being developed incrementally, with the domain model and database foundation established before implementing the POS workflow.
