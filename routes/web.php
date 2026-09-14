@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MasterDataController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +18,15 @@ Route::middleware('guest')->group(function (): void {
 Route::middleware('auth')->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
+
+    Route::middleware('role:super_admin,owner,manager,inventory_staff')->prefix('inventory')->group(function (): void {
+        Route::get('/', [InventoryController::class, 'index'])->name('inventory.index');
+        Route::get('/movements', [InventoryController::class, 'movements'])->name('inventory.movements');
+        foreach (['receive', 'issue', 'adjust', 'opname', 'transfer'] as $action) {
+            Route::get("/{$action}", [InventoryController::class, 'create'])->defaults('action', $action)->name("inventory.{$action}.create");
+            Route::post("/{$action}", [InventoryController::class, 'store'])->defaults('action', $action)->name("inventory.{$action}.store");
+        }
+    });
 
     Route::middleware('role:super_admin,owner,manager,inventory_staff')->prefix('master-data')->group(function (): void {
         foreach (['categories', 'brands', 'units', 'products', 'suppliers'] as $resource) {
