@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MasterDataController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -16,6 +17,28 @@ Route::middleware('guest')->group(function (): void {
 Route::middleware('auth')->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
+
+    Route::middleware('role:super_admin,owner,manager,inventory_staff')->prefix('master-data')->group(function (): void {
+        foreach (['categories', 'brands', 'units', 'products', 'suppliers'] as $resource) {
+            Route::get("/{$resource}", [MasterDataController::class, 'index'])->defaults('resource', $resource)->name("master-data.{$resource}.index");
+            Route::get("/{$resource}/create", [MasterDataController::class, 'create'])->defaults('resource', $resource)->name("master-data.{$resource}.create");
+            Route::post("/{$resource}", [MasterDataController::class, 'store'])->defaults('resource', $resource)->name("master-data.{$resource}.store");
+            Route::get("/{$resource}/{id}/edit", [MasterDataController::class, 'edit'])->defaults('resource', $resource)->name("master-data.{$resource}.edit");
+            Route::put("/{$resource}/{id}", [MasterDataController::class, 'update'])->defaults('resource', $resource)->name("master-data.{$resource}.update");
+            Route::delete("/{$resource}/{id}", [MasterDataController::class, 'destroy'])->defaults('resource', $resource)->name("master-data.{$resource}.destroy");
+        }
+    });
+
+    Route::middleware('role:super_admin,owner')->prefix('master-data')->group(function (): void {
+        foreach (['stores'] as $resource) {
+            Route::get("/{$resource}", [MasterDataController::class, 'index'])->defaults('resource', $resource)->name("master-data.{$resource}.index");
+            Route::get("/{$resource}/create", [MasterDataController::class, 'create'])->defaults('resource', $resource)->name("master-data.{$resource}.create");
+            Route::post("/{$resource}", [MasterDataController::class, 'store'])->defaults('resource', $resource)->name("master-data.{$resource}.store");
+            Route::get("/{$resource}/{id}/edit", [MasterDataController::class, 'edit'])->defaults('resource', $resource)->name("master-data.{$resource}.edit");
+            Route::put("/{$resource}/{id}", [MasterDataController::class, 'update'])->defaults('resource', $resource)->name("master-data.{$resource}.update");
+            Route::delete("/{$resource}/{id}", [MasterDataController::class, 'destroy'])->defaults('resource', $resource)->name("master-data.{$resource}.destroy");
+        }
+    });
 });
 
 Route::middleware(['auth', 'role:super_admin,owner'])->group(function (): void {
