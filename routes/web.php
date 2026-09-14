@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CashSessionController;
 use App\Http\Controllers\DashboardController;
@@ -9,93 +10,25 @@ use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SaleReturnController;
+use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () { return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login'); })->name('home');
-
-Route::middleware('guest')->group(function (): void {
-    Route::get('/login', [AuthController::class, 'create'])->name('login');
-    Route::post('/login', [AuthController::class, 'store'])->name('login.store');
-});
-
+Route::middleware('guest')->group(function (): void { Route::get('/login', [AuthController::class, 'create'])->name('login'); Route::post('/login', [AuthController::class, 'store'])->name('login.store'); });
 Route::middleware('auth')->group(function (): void {
-    Route::get('/dashboard', DashboardController::class)->name('dashboard');
-    Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
-
-    Route::middleware('role:super_admin,owner,manager,inventory_staff,cashier')->prefix('pos')->group(function (): void {
-        Route::get('/', [SaleController::class, 'pos'])->name('pos.index');
-        Route::get('/products', [SaleController::class, 'products'])->name('sales.products');
-        Route::post('/checkout', [SaleController::class, 'checkout'])->name('sales.checkout');
+    Route::get('/dashboard', DashboardController::class)->name('dashboard'); Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
+    Route::middleware('role:super_admin,owner,manager,inventory_staff,cashier')->prefix('pos')->group(function (): void { Route::get('/', [SaleController::class, 'pos'])->name('pos.index'); Route::get('/products', [SaleController::class, 'products'])->name('sales.products'); Route::post('/checkout', [SaleController::class, 'checkout'])->name('sales.checkout'); });
+    Route::middleware('role:super_admin,owner,manager,inventory_staff,cashier')->prefix('sales')->group(function (): void { Route::get('/', [SaleController::class, 'index'])->name('sales.index'); Route::get('/{sale}', [SaleController::class, 'show'])->name('sales.show'); });
+    Route::middleware('role:super_admin,owner,manager,inventory_staff,cashier')->prefix('sale-returns')->group(function (): void { Route::get('/', [SaleReturnController::class, 'index'])->name('sale-returns.index'); Route::get('/sales/{sale}/create', [SaleReturnController::class, 'create'])->name('sale-returns.create'); Route::post('/sales/{sale}', [SaleReturnController::class, 'store'])->name('sale-returns.store'); Route::get('/{saleReturn}', [SaleReturnController::class, 'show'])->name('sale-returns.show'); });
+    Route::middleware('role:super_admin,owner,manager,inventory_staff,cashier')->prefix('cash-sessions')->group(function (): void { Route::get('/', [CashSessionController::class, 'index'])->name('cash-sessions.index'); Route::get('/create', [CashSessionController::class, 'create'])->name('cash-sessions.create'); Route::post('/', [CashSessionController::class, 'store'])->name('cash-sessions.store'); Route::get('/{cashSession}', [CashSessionController::class, 'show'])->name('cash-sessions.show'); Route::get('/{cashSession}/close', [CashSessionController::class, 'closeForm'])->name('cash-sessions.close'); Route::post('/{cashSession}/close', [CashSessionController::class, 'close'])->name('cash-sessions.close.store'); });
+    Route::middleware('role:super_admin,owner,manager')->prefix('reports')->group(function (): void { Route::get('/', [ReportController::class, 'index'])->name('reports.index'); });
+    Route::middleware('role:super_admin,owner,manager,inventory_staff')->prefix('inventory')->group(function (): void { Route::get('/', [InventoryController::class, 'index'])->name('inventory.index'); Route::get('/movements', [InventoryController::class, 'movements'])->name('inventory.movements'); foreach (['receive','issue','adjust','opname'] as $action) { Route::get("/{$action}", [InventoryController::class, 'create'])->defaults('action',$action)->name("inventory.{$action}.create"); Route::post("/{$action}", [InventoryController::class, 'store'])->defaults('action',$action)->name("inventory.{$action}.store"); } });
+    Route::middleware('role:super_admin,owner')->prefix('inventory')->group(function (): void { Route::get('/transfer', [InventoryController::class, 'create'])->defaults('action','transfer')->name('inventory.transfer.create'); Route::post('/transfer', [InventoryController::class, 'store'])->defaults('action','transfer')->name('inventory.transfer.store'); });
+    Route::middleware('role:super_admin,owner,manager,inventory_staff')->prefix('purchases')->group(function (): void { Route::get('/', [PurchaseController::class, 'index'])->name('purchases.index'); Route::get('/create', [PurchaseController::class, 'create'])->name('purchases.create'); Route::post('/', [PurchaseController::class, 'store'])->name('purchases.store'); Route::get('/{purchase}', [PurchaseController::class, 'show'])->name('purchases.show'); Route::post('/{purchase}/receive', [PurchaseController::class, 'receive'])->name('purchases.receive'); });
+    Route::middleware('role:super_admin,owner,manager,inventory_staff')->prefix('master-data')->group(function (): void { foreach (['categories','brands','units','products','suppliers'] as $resource) { Route::get("/{$resource}",[MasterDataController::class,'index'])->defaults('resource',$resource)->name("master-data.{$resource}.index"); Route::get("/{$resource}/create",[MasterDataController::class,'create'])->defaults('resource',$resource)->name("master-data.{$resource}.create"); Route::post("/{$resource}",[MasterDataController::class,'store'])->defaults('resource',$resource)->name("master-data.{$resource}.store"); Route::get("/{$resource}/{id}/edit",[MasterDataController::class,'edit'])->defaults('resource',$resource)->name("master-data.{$resource}.edit"); Route::put("/{$resource}/{id}",[MasterDataController::class,'update'])->defaults('resource',$resource)->name("master-data.{$resource}.update"); Route::delete("/{$resource}/{id}",[MasterDataController::class,'destroy'])->defaults('resource',$resource)->name("master-data.{$resource}.destroy"); } });
+    Route::middleware('role:super_admin,owner')->prefix('master-data')->group(function (): void { Route::get('/stores',[MasterDataController::class,'index'])->defaults('resource','stores')->name('master-data.stores.index'); Route::get('/stores/create',[MasterDataController::class,'create'])->defaults('resource','stores')->name('master-data.stores.create'); Route::post('/stores',[MasterDataController::class,'store'])->defaults('resource','stores')->name('master-data.stores.store'); Route::get('/stores/{id}/edit',[MasterDataController::class,'edit'])->defaults('resource','stores')->name('master-data.stores.edit'); Route::put('/stores/{id}',[MasterDataController::class,'update'])->defaults('resource','stores')->name('master-data.stores.update'); Route::delete('/stores/{id}',[MasterDataController::class,'destroy'])->defaults('resource','stores')->name('master-data.stores.destroy'); });
+    Route::middleware('role:super_admin,owner')->prefix('admin/users')->group(function (): void {
+        Route::get('/', [UserManagementController::class, 'index'])->name('admin.users.index'); Route::get('/create', [UserManagementController::class, 'create'])->name('admin.users.create'); Route::post('/', [UserManagementController::class, 'store'])->name('admin.users.store'); Route::get('/{user}/edit', [UserManagementController::class, 'edit'])->name('admin.users.edit'); Route::put('/{user}', [UserManagementController::class, 'update'])->name('admin.users.update'); Route::delete('/{user}', [UserManagementController::class, 'destroy'])->name('admin.users.destroy');
     });
-
-    Route::middleware('role:super_admin,owner,manager,inventory_staff,cashier')->prefix('sales')->group(function (): void {
-        Route::get('/', [SaleController::class, 'index'])->name('sales.index');
-        Route::get('/{sale}', [SaleController::class, 'show'])->name('sales.show');
-    });
-
-    Route::middleware('role:super_admin,owner,manager,inventory_staff,cashier')->prefix('sale-returns')->group(function (): void {
-        Route::get('/', [SaleReturnController::class, 'index'])->name('sale-returns.index');
-        Route::get('/sales/{sale}/create', [SaleReturnController::class, 'create'])->name('sale-returns.create');
-        Route::post('/sales/{sale}', [SaleReturnController::class, 'store'])->name('sale-returns.store');
-        Route::get('/{saleReturn}', [SaleReturnController::class, 'show'])->name('sale-returns.show');
-    });
-
-    Route::middleware('role:super_admin,owner,manager,inventory_staff,cashier')->prefix('cash-sessions')->group(function (): void {
-        Route::get('/', [CashSessionController::class, 'index'])->name('cash-sessions.index');
-        Route::get('/create', [CashSessionController::class, 'create'])->name('cash-sessions.create');
-        Route::post('/', [CashSessionController::class, 'store'])->name('cash-sessions.store');
-        Route::get('/{cashSession}', [CashSessionController::class, 'show'])->name('cash-sessions.show');
-        Route::get('/{cashSession}/close', [CashSessionController::class, 'closeForm'])->name('cash-sessions.close');
-        Route::post('/{cashSession}/close', [CashSessionController::class, 'close'])->name('cash-sessions.close.store');
-    });
-
-    Route::middleware('role:super_admin,owner,manager')->prefix('reports')->group(function (): void {
-        Route::get('/', [ReportController::class, 'index'])->name('reports.index');
-    });
-
-    Route::middleware('role:super_admin,owner,manager,inventory_staff')->prefix('inventory')->group(function (): void {
-        Route::get('/', [InventoryController::class, 'index'])->name('inventory.index');
-        Route::get('/movements', [InventoryController::class, 'movements'])->name('inventory.movements');
-        foreach (['receive', 'issue', 'adjust', 'opname'] as $action) {
-            Route::get("/{$action}", [InventoryController::class, 'create'])->defaults('action', $action)->name("inventory.{$action}.create");
-            Route::post("/{$action}", [InventoryController::class, 'store'])->defaults('action', $action)->name("inventory.{$action}.store");
-        }
-    });
-
-    Route::middleware('role:super_admin,owner')->prefix('inventory')->group(function (): void {
-        Route::get('/transfer', [InventoryController::class, 'create'])->defaults('action', 'transfer')->name('inventory.transfer.create');
-        Route::post('/transfer', [InventoryController::class, 'store'])->defaults('action', 'transfer')->name('inventory.transfer.store');
-    });
-
-    Route::middleware('role:super_admin,owner,manager,inventory_staff')->prefix('purchases')->group(function (): void {
-        Route::get('/', [PurchaseController::class, 'index'])->name('purchases.index');
-        Route::get('/create', [PurchaseController::class, 'create'])->name('purchases.create');
-        Route::post('/', [PurchaseController::class, 'store'])->name('purchases.store');
-        Route::get('/{purchase}', [PurchaseController::class, 'show'])->name('purchases.show');
-        Route::post('/{purchase}/receive', [PurchaseController::class, 'receive'])->name('purchases.receive');
-    });
-
-    Route::middleware('role:super_admin,owner,manager,inventory_staff')->prefix('master-data')->group(function (): void {
-        foreach (['categories', 'brands', 'units', 'products', 'suppliers'] as $resource) {
-            Route::get("/{$resource}", [MasterDataController::class, 'index'])->defaults('resource', $resource)->name("master-data.{$resource}.index");
-            Route::get("/{$resource}/create", [MasterDataController::class, 'create'])->defaults('resource', $resource)->name("master-data.{$resource}.create");
-            Route::post("/{$resource}", [MasterDataController::class, 'store'])->defaults('resource', $resource)->name("master-data.{$resource}.store");
-            Route::get("/{$resource}/{id}/edit", [MasterDataController::class, 'edit'])->defaults('resource', $resource)->name("master-data.{$resource}.edit");
-            Route::put("/{$resource}/{id}", [MasterDataController::class, 'update'])->defaults('resource', $resource)->name("master-data.{$resource}.update");
-            Route::delete("/{$resource}/{id}", [MasterDataController::class, 'destroy'])->defaults('resource', $resource)->name("master-data.{$resource}.destroy");
-        }
-    });
-
-    Route::middleware('role:super_admin,owner')->prefix('master-data')->group(function (): void {
-        Route::get('/stores', [MasterDataController::class, 'index'])->defaults('resource', 'stores')->name('master-data.stores.index');
-        Route::get('/stores/create', [MasterDataController::class, 'create'])->defaults('resource', 'stores')->name('master-data.stores.create');
-        Route::post('/stores', [MasterDataController::class, 'store'])->defaults('resource', 'stores')->name('master-data.stores.store');
-        Route::get('/stores/{id}/edit', [MasterDataController::class, 'edit'])->defaults('resource', 'stores')->name('master-data.stores.edit');
-        Route::put('/stores/{id}', [MasterDataController::class, 'update'])->defaults('resource', 'stores')->name('master-data.stores.update');
-        Route::delete('/stores/{id}', [MasterDataController::class, 'destroy'])->defaults('resource', 'stores')->name('master-data.stores.destroy');
-    });
-});
-
-Route::middleware(['auth', 'role:super_admin,owner'])->group(function (): void {
-    Route::view('/admin/users', 'dashboard')->name('admin.users');
+    Route::middleware('role:super_admin,owner')->prefix('admin/audit-logs')->group(function (): void { Route::get('/', [AuditLogController::class, 'index'])->name('admin.audit-logs.index'); });
 });
