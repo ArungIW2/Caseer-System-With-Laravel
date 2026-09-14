@@ -6,11 +6,10 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\SaleController;
+use App\Http\Controllers\SaleReturnController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
-})->name('home');
+Route::get('/', function () { return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login'); })->name('home');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
@@ -30,6 +29,13 @@ Route::middleware('auth')->group(function (): void {
     Route::middleware('role:super_admin,owner,manager,inventory_staff,cashier')->prefix('sales')->group(function (): void {
         Route::get('/', [SaleController::class, 'index'])->name('sales.index');
         Route::get('/{sale}', [SaleController::class, 'show'])->name('sales.show');
+    });
+
+    Route::middleware('role:super_admin,owner,manager,inventory_staff,cashier')->prefix('sale-returns')->group(function (): void {
+        Route::get('/', [SaleReturnController::class, 'index'])->name('sale-returns.index');
+        Route::get('/sales/{sale}/create', [SaleReturnController::class, 'create'])->name('sale-returns.create');
+        Route::post('/sales/{sale}', [SaleReturnController::class, 'store'])->name('sale-returns.store');
+        Route::get('/{saleReturn}', [SaleReturnController::class, 'show'])->name('sale-returns.show');
     });
 
     Route::middleware('role:super_admin,owner,manager,inventory_staff')->prefix('inventory')->group(function (): void {
