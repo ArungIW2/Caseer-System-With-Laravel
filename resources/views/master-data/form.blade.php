@@ -13,9 +13,8 @@
         @elseif($field['type'] === 'textarea')
             <label class="mb-1 block text-sm font-medium">{{ $field['label'] }}</label><textarea name="{{ $key }}" rows="4" class="w-full rounded-lg border-slate-300">{{ $value }}</textarea>
         @elseif(in_array($field['type'], ['category','brand','unit']))
-            <label class="mb-1 block text-sm font-medium">{{ $field['label'] }}@if(!empty($field['required'])) * @endif</label><select name="{{ $key }}" class="w-full rounded-lg border-slate-300"><option value="">-- Select --</option>@foreach($field['type'].'s' as $x) @endforeach
             @php($options = $field['type'] === 'category' ? ($categories ?? collect()) : ($field['type'] === 'brand' ? ($brands ?? collect()) : ($units ?? collect())))
-            @foreach($options as $option)<option value="{{ $option->id }}" {{ (string)$value === (string)$option->id ? 'selected' : '' }}>{{ $option->name }}</option>@endforeach</select>
+            <label class="mb-1 block text-sm font-medium">{{ $field['label'] }}@if(!empty($field['required'])) * @endif</label><select name="{{ $key }}" class="w-full rounded-lg border-slate-300"><option value="">-- Select --</option>@foreach($options as $option)<option value="{{ $option->id }}" {{ (string)$value === (string)$option->id ? 'selected' : '' }}>{{ $option->name }}</option>@endforeach</select>
         @else
             <label class="mb-1 block text-sm font-medium">{{ $field['label'] }}@if(!empty($field['required'])) * @endif</label><input type="{{ $field['type'] }}" name="{{ $key }}" value="{{ $value }}" @if(isset($field['step'])) step="{{ $field['step'] }}" @endif class="w-full rounded-lg border-slate-300">
         @endif
