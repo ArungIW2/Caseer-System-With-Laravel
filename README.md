@@ -152,13 +152,45 @@ Return follows the core flow:
 
 `Completed Sale → Lock Sale/Items → Validate Remaining Return Quantity → Calculate Refund → Create Return + Items → Optional Inventory Receive → Movement Ledger → Commit → Return Receipt`
 
+### Phase 8 — Cash Register & Reporting ✅
+
+Implemented:
+
+- Cash register session opening with opening cash
+- One-open-session-per-store application rule
+- Unique cash session number generation (`CS-*`)
+- Store-aware cash session access
+- Cash register closing with physical closing cash
+- Expected cash calculation from opening cash plus completed cash sales, net of change
+- Cash difference / over-short reconciliation
+- Closing user and timestamps
+- Cash session detail with associated sales
+- POS checkout now requires an open cash session for the selected store
+- Completed sales are linked to the active cash session
+- Reporting dashboard with configurable date range
+- Store filter for reports
+- Total completed sales
+- Transaction count
+- Received purchase total
+- Cash net inflow
+- Payment-method breakdown
+- Top-selling products by quantity
+- Low-stock count
+- Dashboard navigation for cash sessions and reporting
+
+Cash register flow:
+
+`Open Session → Opening Cash → POS Sales → Link Sales to Session → Close Session → Calculate Expected Cash → Count Physical Cash → Cash Difference → Reconciliation`
+
+Reporting intentionally focuses on operational totals. Historical profit calculation is not yet presented because sale lines do not currently snapshot product cost at the moment of sale; adding a reliable cost snapshot is preferable to presenting misleading profit figures.
+
 ## Planned Modules
 
 - Draft/hold POS transactions
 - User management UI and role administration
-- Cash register opening/closing and reconciliation UI
-- Dashboard and reporting
-- Audit logging integration
+- Split payments and advanced refund settlement
+- Audit logging integration across all business documents
+- Historical cost/profit accounting (cost snapshot, weighted-average/FIFO as required)
 - Automated feature/unit tests
 - Docker and CI/CD
 - Production hardening
