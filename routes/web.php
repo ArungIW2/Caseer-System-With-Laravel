@@ -22,10 +22,15 @@ Route::middleware('auth')->group(function (): void {
     Route::middleware('role:super_admin,owner,manager,inventory_staff')->prefix('inventory')->group(function (): void {
         Route::get('/', [InventoryController::class, 'index'])->name('inventory.index');
         Route::get('/movements', [InventoryController::class, 'movements'])->name('inventory.movements');
-        foreach (['receive', 'issue', 'adjust', 'opname', 'transfer'] as $action) {
+        foreach (['receive', 'issue', 'adjust', 'opname'] as $action) {
             Route::get("/{$action}", [InventoryController::class, 'create'])->defaults('action', $action)->name("inventory.{$action}.create");
             Route::post("/{$action}", [InventoryController::class, 'store'])->defaults('action', $action)->name("inventory.{$action}.store");
         }
+    });
+
+    Route::middleware('role:super_admin,owner')->prefix('inventory')->group(function (): void {
+        Route::get('/transfer', [InventoryController::class, 'create'])->defaults('action', 'transfer')->name('inventory.transfer.create');
+        Route::post('/transfer', [InventoryController::class, 'store'])->defaults('action', 'transfer')->name('inventory.transfer.store');
     });
 
     Route::middleware('role:super_admin,owner,manager,inventory_staff')->prefix('master-data')->group(function (): void {
