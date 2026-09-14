@@ -1,6 +1,6 @@
 FROM node:22-alpine AS assets
 WORKDIR /app
-COPY package.json package-lock.json* ./
+COPY package.json ./
 RUN npm install
 COPY resources ./resources
 COPY vite.config.js tailwind.config.js postcss.config.js ./
