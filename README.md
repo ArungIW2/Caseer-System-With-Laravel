@@ -1,213 +1,149 @@
-# Caseer System With Laravel
+# Caseer System
 
-A production-oriented retail Point of Sale (POS) and store management system built with Laravel 13.
+> **Professional Retail Management & Point of Sale Platform**
+>
+> A portfolio-grade business application built with Laravel 13, demonstrating professional software engineering across retail operations, inventory control, purchasing, POS, financial reconciliation, RBAC, auditability, automated testing, CI/CD, and containerized deployment.
 
-## Phase Status
+[![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)](https://laravel.com/) [![PHP](https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white)](https://www.php.net/) [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/) [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/) [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)](https://github.com/features/actions)
 
-### Phase 1 — Domain & Database Architecture ✅
+## Executive Summary
 
-Implemented:
+Caseer System is intentionally designed as a **real-world business system**, not a basic CRUD demonstration. Its architecture prioritizes domain rules, transactional integrity, data traceability, authorization, and operational reliability.
 
-- Multi-store foundation with `stores`
-- Store-scoped users
-- Product catalog: categories, brands, units, products
-- Store-specific inventory balances
-- Append-only inventory movement ledger
-- Suppliers and purchasing documents
-- Sales, sale items, and payments
-- Cash register sessions
-- Sale returns and return items
-- Audit log foundation
-- Eloquent domain models and relationships
-- Database architecture and ERD documentation in `docs/architecture/database.md`
+## Core Business Domains
 
-### Phase 2 — Authentication & Authorization ✅
+| Domain | Capabilities |
+| --- | --- |
+| Product Catalog | Products, SKU/barcode, categories, brands, units, pricing, suppliers |
+| Inventory | Stock in/out, adjustment, opname, transfers, movement ledger, low-stock monitoring |
+| Purchasing | Purchase documents, suppliers, receiving, cost tracking |
+| POS | Product search, cart, discounts, tax, checkout, payments, receipts |
+| Sales Returns | Full/partial returns, refund calculation, optional restocking |
+| Cash Register | Opening/closing sessions, expected cash, physical cash, variance reconciliation |
+| Reporting | Sales, purchases, payment methods, top products, stock, gross profit |
+| Administration | Users, roles, store assignment, account status |
+| Audit | Business-event audit trail and traceability |
 
-Implemented:
+## Engineering Highlights
 
-- Session-based login and logout
-- Active-user validation
-- Database-backed sessions
-- User roles: `super_admin`, `owner`, `manager`, `cashier`, and `inventory_staff`
-- Role middleware and protected routes
-- Store-aware authenticated user foundation
-- Default Super Admin seeder for local development
-- Protected dashboard
+### Transactional Business Logic
+Critical workflows use service-layer business logic and database transactions to preserve business invariants.
 
-### Phase 3 — Master Data Management ✅
+### Inventory Concurrency Control
+Inventory operations use `lockForUpdate()`, negative-stock protection, reserved-quantity checks, and deterministic locking for transfers.
 
-Implemented:
+### Inventory Ledger
+Current balances are supported by append-only inventory movements, providing traceability for receiving, issuing, adjustments, transfers, sales, and returns.
 
-- Store management for `super_admin` and `owner`
-- Category CRUD with parent-category support
-- Brand CRUD
-- Unit CRUD
-- Product CRUD with SKU/barcode uniqueness and catalog relationships
-- Supplier CRUD
-- Validation rules for master data
-- Search and pagination
-- Soft delete for categories, brands, units, products, and suppliers
-- Dependency checks before destructive deletion
-- Role-based access for master-data modules
-- Dashboard navigation to master-data modules
-- Development seed data for a store, categories, brands, units, supplier, and demo product
+### Historical Financial Integrity
+Each sale item snapshots `unit_cost`, allowing gross-profit reporting to use historical transaction cost rather than a changing product cost.
 
-### Phase 4 — Inventory Management ✅
+### Multi-Store Architecture
+Products are global catalog entities while inventory and operational transactions are store-aware. Store-scoped roles require an assigned store.
 
-Implemented:
+### RBAC
+- `super_admin` — platform administration
+- `owner` — business administration and reporting
+- `manager` — store management
+- `cashier` — POS and cash operations
+- `inventory_staff` — inventory operations
 
-- Store-specific inventory balance UI
-- Stock In with optional unit cost
-- Stock Out with available-stock validation
-- Manual stock adjustment to an exact target balance
-- Stock opname / physical-count reconciliation
-- Transfer stock between stores
-- Append-only inventory movement ledger UI
-- Movement filtering and pagination
-- Minimum-stock monitoring and low-stock filter
-- Database transactions around every stock-changing operation
-- `lockForUpdate()` row locking to protect concurrent stock changes
-- Deterministic lock ordering for inter-store transfers to reduce deadlock risk
-- Reserved quantity respected when issuing or transferring stock
-- Negative stock protection
-- Store-aware access policies for inventory screens
+### Auditability
+Structured audit records capture business events with user, store, target, old/new values, IP address, user agent, and timestamp.
 
-### Phase 5 — Purchasing & Receiving ✅
+## Implemented Modules
 
-Implemented:
+- **Authentication & Authorization** — session authentication, active-user checks, role middleware, store-aware authorization.
+- **Master Data** — stores, categories, brands, units, products, suppliers, validation, search, pagination, soft deletion.
+- **Inventory** — receiving, issuing, adjustments, stock opname, transfers, ledger, low-stock monitoring, concurrency protection.
+- **Purchasing** — purchase drafts, suppliers, line items, cost/tax/discount calculation, transactional receiving.
+- **Point of Sale** — SKU/barcode/name lookup, cart, authoritative pricing, stock validation, checkout, payments, invoices, receipts.
+- **Sales Returns** — full/partial returns, remaining-quantity validation, refund calculation, optional restocking.
+- **Cash Register & Reporting** — cash sessions, reconciliation, sales/purchase reports, payment analysis, top products, low stock, gross profit.
+- **Administration & Audit** — user management, role/store assignment, activation, audit logs, security protections.
 
-- Store-aware purchasing workflow
-- Purchase draft creation
-- Supplier selection
-- Purchase line items with quantity, unit cost, discount, and tax
-- Automatic subtotal, discount, tax, and grand-total calculation
-- Unique purchase document number generation
-- Purchase list with store/status filtering and pagination
-- Purchase detail screen
-- Draft-only receiving workflow to prevent duplicate stock receipt
-- Receiving integrates with `InventoryService`
-- Purchase receipt movement references the purchase document number
-- Product cost price updated to the latest received unit cost
-- Transactional row locking around purchase receiving
-- Role-based purchasing access
-- Store scoping for non-global roles
+## Development Roadmap
 
-### Phase 6 — POS & Checkout ✅
+| Phase | Scope | Status |
+| --- | --- | :---: |
+| 01 | Domain & Database Architecture | ✅ |
+| 02 | Authentication & Authorization | ✅ |
+| 03 | Master Data Management | ✅ |
+| 04 | Inventory Management | ✅ |
+| 05 | Purchasing & Receiving | ✅ |
+| 06 | POS & Checkout | ✅ |
+| 07 | Sales Returns & Refunds | ✅ |
+| 08 | Cash Register & Reporting | ✅ |
+| 09 | User Management & Audit | ✅ |
+| 10 | Testing, Historical Accounting, CI/CD & Hardening | ✅ |
+| 11 | Advanced POS & Operational Hardening | 🚧 |
 
-Implemented:
-
-- Retail POS screen
-- Product lookup by SKU, barcode, or product name
-- Store-aware product availability and stock display
-- Cart with quantity, item discount, and item tax
-- Server-side authoritative product price
-- Server-side stock validation
-- Transactional checkout
-- Inventory deduction through `InventoryService`
-- Row locking during checkout
-- Automatic invoice numbers
-- Totals and change calculation
-- Cash, card, QRIS, and transfer payments
-- Payment record creation
-- Sales history and printable receipt
-- Role-based POS access and store scoping
-
-### Phase 7 — Sales Returns & Refunds ✅
-
-Implemented:
-
-- Full/partial return workflow
-- Return directly from completed sale
-- `RET-*` return documents
-- Remaining-quantity validation
-- Refund calculation based on original line value
-- Optional restocking through `InventoryService`
-- Inventory movement references return document
-- Transactional sale/item locking
-- Store-aware authorization
-- Return history/detail/printable document
-- Return reason capture
-- Zero-quantity return rows are filtered before validation
-
-### Phase 8 — Cash Register & Reporting ✅
-
-Implemented:
-
-- Cash register opening and closing
-- Opening cash and physical closing cash
-- Expected cash and over/short reconciliation
-- Cash-session numbers (`CS-*`)
-- One open session per store
-- POS sales linked to active cash session
-- Date/store-filtered operational reporting
-- Sales, transaction, purchase, payment-method, top-product, and low-stock metrics
-
-### Phase 9 — User Management, Audit & Administration ✅
-
-Implemented:
-
-- User management UI for `super_admin` and `owner`
-- Create users
-- Edit users
-- Password management
-- Role assignment: `super_admin`, `owner`, `manager`, `cashier`, `inventory_staff`
-- Store assignment for store-scoped users
-- Active/inactive user management
-- Protection against deactivating the currently logged-in account
-- Search, role/status filters, and pagination
-- Reusable `AuditLogService`
-- Audit records include user, store, event, target model, old/new values, IP address, user agent, and timestamp
-- Audit log administration screen
-- Audit log filtering by event and store
-- Role-protected administration routes
-- Dashboard navigation for user management and audit logs
-- Store-scoped roles require store assignment
-- Self role escalation is blocked
-
-### Phase 10 — Testing, Historical Accounting, CI/CD & Hardening ✅
-
-Implemented:
-
-- PHPUnit configuration for the Laravel test suite
-- Feature tests for authentication
-- Feature tests for RBAC
-- Feature tests for user-management validation and audit creation
-- Historical `unit_cost` snapshot on every sale item
-- Gross-profit reporting based on the historical sale cost snapshot
-- Sale completion audit events
-- GitHub Actions CI with PostgreSQL 16
-- Automated Composer install, frontend build, migrations, and test execution in CI
-- Docker runtime image for PHP 8.3
-- Docker frontend asset build stage
-- Docker Compose runtime with PostgreSQL 16
-- Fix for zero-quantity sale-return submissions
-- Production-oriented role/store validation hardening
-
-## Planned Modules
+### Planned Improvements
 
 - Draft/hold POS transactions
 - Split payments and advanced refund settlement
-- Full audit coverage for purchasing, inventory, returns, and cash sessions
+- Full audit coverage across critical domains
 - Idempotent checkout protection
-- Advanced cash in/out adjustments
-- Nginx + PHP-FPM production deployment profile
-- Expanded integration/concurrency test coverage
+- Cash in/out adjustments
+- Expanded integration and concurrency tests
+- Nginx + PHP-FPM production profile
+- Health checks, observability, and further security hardening
 
-## Stack
+## Technology Stack
 
-- Laravel 13
+**Backend:** Laravel 13, PHP 8.3+, PostgreSQL 16, Redis  
+**Frontend:** Blade, Livewire, Tailwind CSS, Vite  
+**Engineering & DevOps:** PHPUnit, GitHub Actions, Docker, Docker Compose
+
+## Engineering Practices Demonstrated
+
+- Service-layer architecture
+- Domain/business-rule modeling
+- Database transactions
+- Row-level concurrency control
+- Multi-store data scoping
+- RBAC and authorization boundaries
+- Historical accounting snapshots
+- Append-only operational ledgers
+- Defensive validation
+- Audit logging
+- Feature testing
+- PostgreSQL-based CI
+- Automated frontend builds
+- Containerized application delivery
+
+## Project Structure
+
+```text
+app/                 # Controllers, middleware, models, services
+database/            # Migrations and seeders
+resources/            # Blade/Livewire views
+tests/                # Feature and unit tests
+docs/architecture/    # Database and architecture documentation
+.github/workflows/    # CI/CD workflows
+Dockerfile
+docker-compose.yml
+phpunit.xml
+composer.json
+package.json
+```
+
+## Getting Started
+
+### Requirements
+
 - PHP 8.3+
-- PostgreSQL
-- Redis
-- Blade + Livewire
-- Tailwind CSS
-- PHPUnit
-- Docker
-- GitHub Actions
+- Composer
+- Node.js 22+
+- PostgreSQL 16+
+- Redis (recommended)
+- Git
 
-## Development
+### Local Development
 
 ```bash
+git clone https://github.com/ArungIW2/Caseer-System-With-Laravel.git
+cd Caseer-System-With-Laravel
 composer install
 cp .env.example .env
 php artisan key:generate
@@ -220,22 +156,31 @@ npm run dev
 
 ```bash
 docker compose up --build
-```
-
-Run migrations inside the container after the database is healthy:
-
-```bash
 docker compose exec app php artisan migrate --seed
 ```
 
-### Local development account
+## Development Account
 
-The development seeder creates:
+```text
+Email    : admin@caseer.test
+Password : ChangeMe123!
+Role     : super_admin
+```
 
-- Email: `admin@caseer.test`
-- Password: `ChangeMe123!`
-- Role: `super_admin`
+> **Security:** change or remove this credential before any non-local deployment.
 
-Change or remove this credential before any non-local deployment.
+## Documentation
 
-The application is being developed incrementally, with transactional inventory controls established before implementing progressively richer POS, returns, reporting, administration, automated testing, and deployment workflows.
+Database architecture and the ERD are documented in `docs/architecture/database.md`.
+
+## Project Status
+
+Caseer System is an **active portfolio project under continuous development**. Completed phases represent implemented capabilities; the roadmap identifies the next production-hardening priorities.
+
+## Career / Portfolio Focus
+
+This project demonstrates practical capability in **Backend Engineering, Laravel/PHP Development, Database Design, Business Application Architecture, Inventory & Transaction Systems, RBAC, Application Security, Automated Testing, CI/CD, Docker, and Deployment**.
+
+---
+
+**Caseer System** — a professional portfolio project demonstrating software engineering from domain modeling and transactional business logic to testing and deployment readiness.
