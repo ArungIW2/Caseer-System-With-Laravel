@@ -25,6 +25,10 @@ class InventoryService
     public function adjust(User $user, Store $store, Product $product, float $newQuantity, ?string $reason = null): Inventory
     {
         return DB::transaction(function () use ($user, $store, $product, $newQuantity, $reason): Inventory {
+            if ($newQuantity < 0) {
+                throw ValidationException::withMessages(['new_quantity' => 'Stok tidak boleh negatif.']);
+            }
+
             $inventory = $this->lockInventory($store, $product);
             $before = (float) $inventory->quantity;
             $delta = $newQuantity - $before;
@@ -44,6 +48,10 @@ class InventoryService
     public function opname(User $user, Store $store, Product $product, float $countedQuantity, ?string $reason = null): Inventory
     {
         return DB::transaction(function () use ($user, $store, $product, $countedQuantity, $reason): Inventory {
+            if ($countedQuantity < 0) {
+                throw ValidationException::withMessages(['counted_quantity' => 'Hasil opname tidak boleh negatif.']);
+            }
+
             $inventory = $this->lockInventory($store, $product);
             $before = (float) $inventory->quantity;
             $delta = $countedQuantity - $before;
@@ -65,15 +73,14 @@ class InventoryService
         if ($from->id === $to->id) {
             throw ValidationException::withMessages(['to_store_id' => 'Tujuan transfer harus berbeda dari toko asal.']);
         }
+        if ($quantity <= 0) {
+            throw ValidationException::withMessages(['quantity' => 'Jumlah transfer harus lebih dari 0.']);
+        }
 
         DB::transaction(function () use ($user, $from, $to, $product, $quantity, $reason): void {
             $source = $this->lockInventory($from, $product);
             $destination = $this->lockInventory($to, $product);
             $beforeSource = (float) $source->quantity;
-
-            if ($quantity <= 0) {
-                throw ValidationException::withMessages(['quantity' => 'Jumlah transfer harus lebih dari 0.']);
-            }
 
             if ($beforeSource - (float) $source->reserved_quantity < $quantity) {
                 throw ValidationException::withMessages(['quantity' => 'Stok tersedia tidak mencukupi untuk transfer.']);
@@ -112,12 +119,16 @@ class InventoryService
 
     private function lockInventory(Store $store, Product $product): Inventory
     {
-        return Inventory::query()->firstOrCreate(
+        Inventory::query()->firstOrCreate(
             ['store_id' => $store->id, 'product_id' => $product->id],
             ['quantity' => 0, 'reserved_quantity' => 0]
-        )->newQuery()->whereKey(function () use ($store, $product) {
-            return Inventory::query()->where('store_id', $store->id)->where('product_id', $product->id)->value('id');
-        })->lockForUpdate()->firstOrFail();
+        );
+
+        return Inventory::query()
+            ->where('store_id', $store->id)
+            ->where('product_id', $product->id)
+            ->lockForUpdate()
+            ->firstOrFail();
     }
 
     private function apply(Inventory $inventory, float $delta): void
