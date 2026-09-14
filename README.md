@@ -97,12 +97,42 @@ Implemented:
 
 A purchase remains a `draft` until it is explicitly received. Once received, its inventory impact is posted and the purchase becomes `received`; the current implementation does not silently mutate or receive an already-posted purchase.
 
+### Phase 6 — POS & Checkout ✅
+
+Implemented:
+
+- Retail POS screen
+- Product lookup by SKU, barcode, or product name
+- Store-aware product availability and stock display
+- Client-side shopping cart with quantity, item discount, and item tax
+- Server-side authoritative product price lookup from the database
+- Server-side validation for product availability and quantities
+- Checkout wrapped in a database transaction
+- Inventory deduction through `InventoryService`
+- Row locking on products/inventory during checkout to protect concurrent sales
+- Available-stock validation that respects reserved quantity
+- Automatic invoice number generation
+- Subtotal, discount, tax, grand-total, paid-total, and change calculation
+- Payment methods: cash, card, QRIS, and transfer
+- Exact-payment enforcement for non-cash methods
+- Cash change calculation
+- Payment record creation
+- Sale history with search, store/status filters, and pagination
+- Sale detail / printable receipt view
+- Role-based POS access for `super_admin`, `owner`, `manager`, `inventory_staff`, and `cashier`
+- Store scoping so store-bound users cannot checkout against another store
+- Dashboard navigation for POS and sales history
+
+Checkout follows the core flow:
+
+`Product Search → Cart → Server Validation → Inventory Row Lock → Stock Validation → Sale + Items → Payment → Inventory Movement → Commit → Receipt`
+
 ## Planned Modules
 
+- Draft/hold POS transactions
 - User management UI and role administration
-- Retail POS and checkout integrated with inventory locking
-- Sales, returns, and refunds
-- Payments and receipts
+- Sales returns and refunds
+- Cash register opening/closing and reconciliation UI
 - Dashboard and reporting
 - Audit logging integration
 - Automated feature/unit tests
@@ -142,4 +172,4 @@ The development seeder creates:
 
 Change or remove this credential before any non-local deployment.
 
-The application is being developed incrementally, with transactional inventory controls established before implementing the POS checkout workflow.
+The application is being developed incrementally, with transactional inventory controls established before implementing progressively richer POS, returns, reporting, and operational workflows.
