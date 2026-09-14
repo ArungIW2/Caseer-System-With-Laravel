@@ -127,11 +127,35 @@ Checkout follows the core flow:
 
 `Product Search → Cart → Server Validation → Inventory Row Lock → Stock Validation → Sale + Items → Payment → Inventory Movement → Commit → Receipt`
 
+### Phase 7 — Sales Returns & Refunds ✅
+
+Implemented:
+
+- Full or partial sales return workflow
+- Return processing directly from a completed sale
+- Sale return document number generation (`RET-*`)
+- Per-item return quantity validation
+- Prevention of returning more quantity than originally sold minus completed previous returns
+- Refund value derived from the original sale item's effective line value, preserving the original discount/tax impact
+- Optional restocking per returned item
+- Restocking through `InventoryService`, preserving inventory locking and movement-ledger consistency
+- Return movement references the return document number
+- Transactional locking on the sale and sale items during return processing
+- Store-aware return authorization
+- Return history with search, store filtering, and pagination
+- Return detail / printable refund document
+- Reason capture for return processing
+- Dashboard navigation for return history
+- Return action from the sale detail screen
+
+Return follows the core flow:
+
+`Completed Sale → Lock Sale/Items → Validate Remaining Return Quantity → Calculate Refund → Create Return + Items → Optional Inventory Receive → Movement Ledger → Commit → Return Receipt`
+
 ## Planned Modules
 
 - Draft/hold POS transactions
 - User management UI and role administration
-- Sales returns and refunds
 - Cash register opening/closing and reconciliation UI
 - Dashboard and reporting
 - Audit logging integration
