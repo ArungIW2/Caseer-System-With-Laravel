@@ -177,10 +177,4 @@ Database architecture and the ERD are documented in `docs/architecture/database.
 
 Caseer System is an **active portfolio project under continuous development**. Completed phases represent implemented capabilities; the roadmap identifies the next production-hardening priorities.
 
-## Career / Portfolio Focus
-
-This project demonstrates practical capability in **Backend Engineering, Laravel/PHP Development, Database Design, Business Application Architecture, Inventory & Transaction Systems, RBAC, Application Security, Automated Testing, CI/CD, Docker, and Deployment**.
-
----
-
 **Caseer System** — a professional portfolio project demonstrating software engineering from domain modeling and transactional business logic to testing and deployment readiness.
