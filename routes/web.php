@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MasterDataController;
+use App\Http\Controllers\PurchaseController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -31,6 +32,14 @@ Route::middleware('auth')->group(function (): void {
     Route::middleware('role:super_admin,owner')->prefix('inventory')->group(function (): void {
         Route::get('/transfer', [InventoryController::class, 'create'])->defaults('action', 'transfer')->name('inventory.transfer.create');
         Route::post('/transfer', [InventoryController::class, 'store'])->defaults('action', 'transfer')->name('inventory.transfer.store');
+    });
+
+    Route::middleware('role:super_admin,owner,manager,inventory_staff')->prefix('purchases')->group(function (): void {
+        Route::get('/', [PurchaseController::class, 'index'])->name('purchases.index');
+        Route::get('/create', [PurchaseController::class, 'create'])->name('purchases.create');
+        Route::post('/', [PurchaseController::class, 'store'])->name('purchases.store');
+        Route::get('/{purchase}', [PurchaseController::class, 'show'])->name('purchases.show');
+        Route::post('/{purchase}/receive', [PurchaseController::class, 'receive'])->name('purchases.receive');
     });
 
     Route::middleware('role:super_admin,owner,manager,inventory_staff')->prefix('master-data')->group(function (): void {
