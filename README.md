@@ -72,8 +72,6 @@ Implemented:
 - Negative stock protection
 - Store-aware access policies for inventory screens
 
-Inventory changes update the current balance and append a movement record inside the same transaction. Future purchasing, POS, returns, and transfer workflows should reuse `InventoryService` rather than modifying balances directly.
-
 ### Phase 5 — Purchasing & Receiving ✅
 
 Implemented:
@@ -87,15 +85,12 @@ Implemented:
 - Purchase list with store/status filtering and pagination
 - Purchase detail screen
 - Draft-only receiving workflow to prevent duplicate stock receipt
-- Receiving integrates with `InventoryService`, so stock changes create movement-ledger records atomically
+- Receiving integrates with `InventoryService`
 - Purchase receipt movement references the purchase document number
 - Product cost price updated to the latest received unit cost
 - Transactional row locking around purchase receiving
-- Role-based purchasing access for `super_admin`, `owner`, `manager`, and `inventory_staff`
-- Store scoping so non-global roles cannot access another store's purchases
-- Dashboard navigation for purchasing
-
-A purchase remains a `draft` until it is explicitly received. Once received, its inventory impact is posted and the purchase becomes `received`; the current implementation does not silently mutate or receive an already-posted purchase.
+- Role-based purchasing access
+- Store scoping for non-global roles
 
 ### Phase 6 — POS & Checkout ✅
 
@@ -104,93 +99,82 @@ Implemented:
 - Retail POS screen
 - Product lookup by SKU, barcode, or product name
 - Store-aware product availability and stock display
-- Client-side shopping cart with quantity, item discount, and item tax
-- Server-side authoritative product price lookup from the database
-- Server-side validation for product availability and quantities
-- Checkout wrapped in a database transaction
+- Cart with quantity, item discount, and item tax
+- Server-side authoritative product price
+- Server-side stock validation
+- Transactional checkout
 - Inventory deduction through `InventoryService`
-- Row locking on products/inventory during checkout to protect concurrent sales
-- Available-stock validation that respects reserved quantity
-- Automatic invoice number generation
-- Subtotal, discount, tax, grand-total, paid-total, and change calculation
-- Payment methods: cash, card, QRIS, and transfer
-- Exact-payment enforcement for non-cash methods
-- Cash change calculation
+- Row locking during checkout
+- Automatic invoice numbers
+- Totals and change calculation
+- Cash, card, QRIS, and transfer payments
 - Payment record creation
-- Sale history with search, store/status filters, and pagination
-- Sale detail / printable receipt view
-- Role-based POS access for `super_admin`, `owner`, `manager`, `inventory_staff`, and `cashier`
-- Store scoping so store-bound users cannot checkout against another store
-- Dashboard navigation for POS and sales history
-
-Checkout follows the core flow:
-
-`Product Search → Cart → Server Validation → Inventory Row Lock → Stock Validation → Sale + Items → Payment → Inventory Movement → Commit → Receipt`
+- Sales history and printable receipt
+- Role-based POS access and store scoping
 
 ### Phase 7 — Sales Returns & Refunds ✅
 
 Implemented:
 
-- Full or partial sales return workflow
-- Return processing directly from a completed sale
-- Sale return document number generation (`RET-*`)
-- Per-item return quantity validation
-- Prevention of returning more quantity than originally sold minus completed previous returns
-- Refund value derived from the original sale item's effective line value, preserving the original discount/tax impact
-- Optional restocking per returned item
-- Restocking through `InventoryService`, preserving inventory locking and movement-ledger consistency
-- Return movement references the return document number
-- Transactional locking on the sale and sale items during return processing
-- Store-aware return authorization
-- Return history with search, store filtering, and pagination
-- Return detail / printable refund document
-- Reason capture for return processing
-- Dashboard navigation for return history
-- Return action from the sale detail screen
-
-Return follows the core flow:
-
-`Completed Sale → Lock Sale/Items → Validate Remaining Return Quantity → Calculate Refund → Create Return + Items → Optional Inventory Receive → Movement Ledger → Commit → Return Receipt`
+- Full/partial return workflow
+- Return directly from completed sale
+- `RET-*` return documents
+- Remaining-quantity validation
+- Refund calculation based on original line value
+- Optional restocking through `InventoryService`
+- Inventory movement references return document
+- Transactional sale/item locking
+- Store-aware authorization
+- Return history/detail/printable document
+- Return reason capture
 
 ### Phase 8 — Cash Register & Reporting ✅
 
 Implemented:
 
-- Cash register session opening with opening cash
-- One-open-session-per-store application rule
-- Unique cash session number generation (`CS-*`)
-- Store-aware cash session access
-- Cash register closing with physical closing cash
-- Expected cash calculation from opening cash plus completed cash sales, net of change
-- Cash difference / over-short reconciliation
-- Closing user and timestamps
-- Cash session detail with associated sales
-- POS checkout now requires an open cash session for the selected store
-- Completed sales are linked to the active cash session
-- Reporting dashboard with configurable date range
-- Store filter for reports
-- Total completed sales
-- Transaction count
-- Received purchase total
-- Cash net inflow
-- Payment-method breakdown
-- Top-selling products by quantity
-- Low-stock count
-- Dashboard navigation for cash sessions and reporting
+- Cash register opening and closing
+- Opening cash and physical closing cash
+- Expected cash and over/short reconciliation
+- Cash-session numbers (`CS-*`)
+- One open session per store
+- POS sales linked to active cash session
+- Date/store-filtered operational reporting
+- Sales, transaction, purchase, payment-method, top-product, and low-stock metrics
 
-Cash register flow:
+### Phase 9 — User Management, Audit & Administration ✅
 
-`Open Session → Opening Cash → POS Sales → Link Sales to Session → Close Session → Calculate Expected Cash → Count Physical Cash → Cash Difference → Reconciliation`
+Implemented:
 
-Reporting intentionally focuses on operational totals. Historical profit calculation is not yet presented because sale lines do not currently snapshot product cost at the moment of sale; adding a reliable cost snapshot is preferable to presenting misleading profit figures.
+- User management UI for `super_admin` and `owner`
+- Create users
+- Edit users
+- Password management
+- Role assignment: `super_admin`, `owner`, `manager`, `cashier`, `inventory_staff`
+- Store assignment for store-scoped users
+- Active/inactive user management
+- Protection against deactivating the currently logged-in account
+- Search, role/status filters, and pagination
+- Reusable `AuditLogService`
+- Audit records include user, store, event, target model, old/new values, IP address, user agent, and timestamp
+- Audit log administration screen
+- Audit log filtering by event and store
+- Role-protected administration routes
+- Dashboard navigation for user management and audit logs
+
+User administration flow:
+
+`Admin → Create/Edit User → Assign Role → Assign Store → Activate/Deactivate → Audit Record`
+
+Audit flow:
+
+`Administrative Action → AuditLogService → audit_logs → Filterable Audit History`
 
 ## Planned Modules
 
 - Draft/hold POS transactions
-- User management UI and role administration
 - Split payments and advanced refund settlement
-- Audit logging integration across all business documents
-- Historical cost/profit accounting (cost snapshot, weighted-average/FIFO as required)
+- Automatic audit logging across purchasing, inventory, POS, returns, and cash sessions
+- Historical cost/profit accounting with cost snapshots
 - Automated feature/unit tests
 - Docker and CI/CD
 - Production hardening
@@ -228,4 +212,4 @@ The development seeder creates:
 
 Change or remove this credential before any non-local deployment.
 
-The application is being developed incrementally, with transactional inventory controls established before implementing progressively richer POS, returns, reporting, and operational workflows.
+The application is being developed incrementally, with transactional inventory controls established before implementing progressively richer POS, returns, reporting, and administration workflows.
